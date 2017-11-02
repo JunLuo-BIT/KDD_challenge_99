@@ -6,56 +6,43 @@ Created on Wed Nov  1 15:23:39 2017
 @author: austin
 """
 # cd /home/austin/ML/KDDcup99
-import pandas
-import numpy
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import confusion_matrix, zero_one_loss
+# cd /Users/spdllab02/Documents/ADML/KDD_challenge_99
 
-# Must declare data_dir as the directory of training and test files
-data_dir = '/home/austin/ML/KDDcup99/'
-
-train_data = data_dir + "kddcup.data_10_percent_corrected"
-train_labels = data_dir + "train_labels.txt"
-test_data = data_dir + "correctedk"
-test_labels = data_dir + "test_labels.txt"
-
-#data['malware'] = data['malware'].apply(lambda Tag: 0 if Tag=='normal.' else 1 )
+import pandas as pd
+import numpy as np 
 
 
-def process_data(X, y):
-    X = X.drop(41, 1)
-    X[1], uniques = pandas.factorize(X[1])
-    X[2], uniques = pandas.factorize(X[2])
-    X[3], uniques = pandas.factorize(X[3])
+data = pd.read_csv('kddcup.data_10_percent_corrected')
 
-    num_examples = 10**6
-    X = X[0:num_examples]
-    y = y[0:num_examples]
+x=data.applymap(np.isreal)
+data['malware'] = data['malware'].apply(lambda Tag: 0 if Tag=='normal.' else 1 )
 
-    X = numpy.array(X)
-    y = numpy.array(y).ravel()
 
-    return X, y
+#Encoding the categorical values into numerical values.
+from sklearn import preprocessing
+le = preprocessing.LabelEncoder()
+data.protocol_type = le.fit_transform(data.protocol_type)
+data.service = le.fit_transform( data.service)
+data.flag = le.fit_transform( data.flag)
 
-data = pandas.read_csv(train_data,header=None)
 
-print("Loading training data")
-train_X = pandas.read_csv(train_data, header=None)
-train_y = pandas.read_csv(train_labels, header=None)
-train_X, train_y = process_data(train_X, train_y)
+# Standard way of dealing with categorical values
+#   -  use label encoder to convert categorical into number.
+#   -  Use OneHotEncoder to convert numbers to binary.
 
-print("Loading test data")
-test_X = pandas.read_csv(test_data, header=None)
-test_y = pandas.read_csv(test_labels, header=None)
-test_X, test_y = process_data(test_X, test_y)
+normal_df = (data.loc[data['malware'] == 0]).sample(n=90000)
+attack_df = (data.loc[data['malware'] == 1]).sample(n=90000)
+data = normal_df.append(attack_df)
 
-print("Training and predicting")
-learner = KNeighborsClassifier(1, n_jobs=-1)
-learner.fit(train_X, train_y)
-pred_y = learner.predict(test_X)
 
-results = confusion_matrix(test_y, pred_y)
-error = zero_one_loss(test_y, pred_y)
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test= train_test_split(data.iloc[:,:41],data.iloc[:,-1],test_size=0.2)
 
-print(results)
-print(error)
+from sklearn.ensemble import RandomForestClassifier
+rfc = RandomForestClassifier()
+rfc.fit(X_train,y_train)
+
+y_pred = rfc.predict(X_test) 
+
+from sklearn.metrics import accuracy_score
+accuracy_score(y_pred,y_test)
