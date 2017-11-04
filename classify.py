@@ -89,7 +89,7 @@ data=featureSelect(data)
 X,y=datapreprocessing(data)
 
 print("Classifier\t Execution Time \t Accuracy")
-#RFC = stratified_cv(X, y, RandomForestClassifier, "Random Forest Classifier",max_depth=2)
+#RFC = stratified_cv(X, y, RandomForestClassifier, "Random Forest Classifier",max_features=30 )
 KNN = stratified_cv(X,y, KNeighborsClassifier, "K Neighbor Classifier", n_neighbors=1000)
 SVMC = stratified_cv(X,y, SVC, "Support Vector Machine",max_iter=300)
 
